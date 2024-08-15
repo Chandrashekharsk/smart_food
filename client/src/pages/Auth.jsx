@@ -21,7 +21,9 @@ export const Register = () => {
   const handleSubmit = async(e)=>{
     e.preventDefault();
     try {
-      await axios.post("http://localhost:8080/auth/register",
+        console.log("env: "+process.env.REACT_APP_API_URL);
+      console.log("username info:"+username+" "+password);
+      await axios.post(`${process.env.REACT_APP_API_URL}/auth/register`,
         {
           username,
           password
@@ -65,7 +67,7 @@ export const Login = () => {
   const handleSubmit = async(e)=>{
     e.preventDefault();
     try {
-      await axios.post("http://localhost:8080/auth/login",
+      await axios.post(`${process.env.REACT_APP_API_URL}/auth/login`,
         {username, password}
       )
       .then((res)=>{

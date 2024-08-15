@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
     required:true,
     unique:true,
     minlength:[2,"username must be at least 2 characters long"],
-    maxlength:[10,"username can not cantains more than 10 charactors"],
+    maxlength:[20,"username can not cantains more than 10 charactors"],
     lowercase: true
   },
   password:{
@@ -23,4 +23,4 @@ const userSchema = new mongoose.Schema({
  
 })
 
-export const UserModel = mongoose.model("User", userSchema)
+export const UserModel = mongoose.models.User|| mongoose.model("User", userSchema)

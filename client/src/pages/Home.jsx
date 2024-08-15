@@ -11,7 +11,7 @@ export const Home = () => {
 
   const fetchRecipe = async()=>{
     try {
-      const response = await axios.get("http://localhost:8080/recipes")
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/recipes`)
       setRecipes(response.data)
     } catch (error) {
       console.error(error)
@@ -20,7 +20,7 @@ export const Home = () => {
 
   const savedRec = async()=>{
     try {
-      const res = await axios.get(`http://localhost:8080/recipes/savedrecipes/${userID}`,{
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/recipes/savedrecipes/${userID}`,{
         headers:{authorization:cookies.access_token}
       })
       console.log("res",res)
@@ -36,7 +36,7 @@ export const Home = () => {
   const saveRecipe = async(recipeID)=>{
     try {
       // const userID = window.localStorage.getItem("userID")
-      const response = await axios.put("http://localhost:8080/recipes",
+      const response = await axios.put(`${process.env.REACT_APP_API_URL}/recipes`,
       {
         userID,
         recipeID

@@ -40,7 +40,7 @@ export const CreateRecipe = () => {
   const onSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:8080/recipes",
+      await axios.post(`${process.env.REACT_APP_API_URL}/recipes`,
       recipe,
       {
         headers:{authorization:cookies.access_token}

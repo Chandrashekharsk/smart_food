@@ -12,7 +12,7 @@ export const SavedRecipe = () => {
 
   const getRecipes = async()=>{
     try{
-      const res = await axios.get(`http://localhost:8080/recipes/savedrecipes/${userID}`,
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/recipes/savedrecipes/${userID}`,
       {
         headers: {authorization:cookies.access_token}
       })
