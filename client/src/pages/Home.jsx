@@ -26,8 +26,6 @@ export const Home = () => {
       console.log("res",res)
       console.log("data",res.data)
       setSrecipes(res.data)
-      
-
     } catch (error) {
       console.error(error)
     }
@@ -63,7 +61,8 @@ export const Home = () => {
     <div>
       <h1 className='heading'>Recipes</h1>
       <ul>
-        {recipes.map((recipe)=>(
+        {recipes &&
+        recipes.map((recipe)=>(
           <li className='card' key={recipe._id}>
             <div>
               <h2>{recipe.name}</h2>
