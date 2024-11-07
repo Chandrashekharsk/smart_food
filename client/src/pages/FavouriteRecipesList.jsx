@@ -128,12 +128,13 @@ const FavouriteRecipesList = () => {
                           </>)
                       )}
                       {/* Ellipsis Button */}
+                      {user?.id === item.owner._id && 
                       <button
                         onClick={() => togglePopup(item._id)}
                         className="text-gray-500 hover:text-gray-700"
                       >
                         <FaEllipsisH />
-                      </button>
+                      </button>}
                     </div>
                   </div>
 

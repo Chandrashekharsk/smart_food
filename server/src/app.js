@@ -8,6 +8,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { verifyToken } from "./middleware/validateToken.js";
 
+
 const app = express();
 console.log("envUri",process.env.MONGODB_URI)
 
