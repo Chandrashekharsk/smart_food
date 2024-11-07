@@ -32,7 +32,7 @@ export default function GlobalState({ children }) {
   const createRecipe = async (newRecipeData) => {
     setLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/recipes`, newRecipeData, { withCredentials: true });
+      const res = await axios.post(`${API_URL}recipes`, newRecipeData, { withCredentials: true });
   
       if (res.data.success) {
         toast.success("Created");
