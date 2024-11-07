@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config({})
+dotenv.config()
 import connectDB from "./utils/dbConfig.js";
 import { userRouter } from "./routes/users.js";
 import { recipesRouter } from "./routes/recipes.js";
@@ -8,9 +8,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { verifyToken } from "./middleware/validateToken.js";
 
-dotenv.config();
-
 const app = express();
+console.log("envUri",process.env.MONGODB_URI)
 
 app.get("/", (_, res) => {
   res.send("SERVER IS RUNNING");
