@@ -1,23 +1,26 @@
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-dotenv.config();
-
 export const verifyToken = async (req, res, next) => {
+  console.log("intoken validator")
   try {
-    const authHeader = req.headers.authorization || req.headers.Authorization;
-    if (!authHeader) {
-      return res.status(400).json({ message: "token is lost" });
+    const token = req.cookies?.access_token
+    || (req.headers.authorization && req.headers.authorization.split(" ")[1]);
+    console.log("Token:", token);
+
+    if (!token) {
+      return res.status(401).json({ message: "User not authenticated", status: false });
     }
-     jwt.verify(authHeader, process.env.JWT_SECRET, (err, decoded) => {
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
       if (err) {
-        console.log("i am err")
-        return res.status(401).json({ message: "Unauthorized" });
+        return res.status(401).json({ message: "Invalid token", success: false });
       }
-      // console.log(decoded);
-      req.user = decoded.user;
+      req.UserId = decoded.user.id;
+      // console.log("Decoded user ID:", req.UserId);
+      console.log("token validated")
       next();
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error:", err.message);
+    return res.status(500).json({ error: "Internal server error", success: false });
   }
 };

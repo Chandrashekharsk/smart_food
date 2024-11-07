@@ -1,23 +1,41 @@
-import './App.css';
 import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
-import { Home } from './pages/Home'; 
-import { Auth } from './pages/Auth'; 
+import Home from './pages/Home'; 
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
 import { CreateRecipe } from './pages/CreateRecipe'; 
-import { SavedRecipe } from './pages/SavedRecipe'; 
-import { Navbar } from './components/Navbar';
+import Nav from './components/Nav';
+import Details from './components/Details';
+import {ToastContainer} from "react-toastify";
+import GlobalState from './context';
+import FavouriteRecipesList from "./pages/FavouriteRecipesList";
+import Footer from "./components/Footer";
+import { EditPost } from "./components/EditPost";
+import LikedRecipesList from "./pages/LikedRecipesList";
+import Contact from "./pages/Contact";
+
 
 function App() {
   return (
     <>
       <div className='App'>
+        
         <Router>
-          <Navbar/>
+          <GlobalState>
+          <Nav/>
           <Routes>
             <Route path="/" element={<Home/>} />
-            <Route path="/auth" element={<Auth/>} />
+            <Route path="/login" element={<Login/>} />
+            <Route path="/contact" element={<Contact/>} />
+            <Route path="/register" element={<Register/>} />
+            <Route path="/liked-posts" element={<LikedRecipesList/>} />
+            <Route path="/recipe-item/:id" element={<Details/>} />
+            <Route path="/edit-post/:id" element={<EditPost/>} />
             <Route path="/create-recipe" element={<CreateRecipe/>} />
-            <Route path="/saved-recipe" element={<SavedRecipe/>} />
+            <Route path="/favorites" element={<FavouriteRecipesList/>} />
           </Routes>
+          <Footer/>
+          <ToastContainer/>
+          </GlobalState>
         </Router>
       </div>
     </>

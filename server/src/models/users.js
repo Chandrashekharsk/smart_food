@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
+  profile_pic: {
+    type: String,
+  },
   username:{
     type:String,
     required:true,
@@ -14,13 +17,18 @@ const userSchema = new mongoose.Schema({
     required:true,
     minlength:[4,"password must be at least 4 charactors long"]
   },
+  liked:[
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref:"Recipe",
+    }
+  ],
   savedRecipes:[
     {
       type:mongoose.Schema.Types.ObjectId,
       ref:"Recipe"
     }
   ]
- 
 })
 
 export const UserModel = mongoose.models.User|| mongoose.model("User", userSchema)

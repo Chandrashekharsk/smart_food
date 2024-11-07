@@ -3,66 +3,293 @@ import dotenv from "dotenv"
 dotenv.config()
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt"
+import cloudinary from "../utils/cloudinaryConfig.js"
 
-const registerUser = async(req,res)=>{
-  let {username,password} = req.body
-  // username = username.trim() 
-  // password = password.trim()
+const registerUser = async (req, res) => {
   try {
-    if(!username || !password){
-      return res.status(400).json({message:"All fields are required"})
+    console.log('Registering new user');
+    let { username, password } = req.body;
+    console.log('Received username and password:', username, password);
+    
+    username = username?.trim();
+    password = password?.trim();
+
+    // Validate input fields
+    if (!username || !password) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
     }
-    const userExists = await UserModel.findOne({username})
-    if(userExists){
-      return res.status(400).json({message:"User already exists"})
+
+    // Check if user already exists
+    console.log("checking")
+    const userExists = await UserModel.findOne({ username });
+    if (userExists) {
+      return res.status(400).json({ success: false, message: "User already exists" });
     }
-    const hashedPassword = await bcrypt.hash(password,10)
+    console.log("doesnt exist user")
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Create new user document
     const user = new UserModel({
-      username,password:hashedPassword
-    })
-    user.save();
-    res.status(201).json({message:"user registered successfully"})
+      username,
+      password: hashedPassword,
+      profile_pic: "",
+    });
 
+    // Save user and respond
+    await user.save();
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      userId: user._id,
+    });
   } catch (error) {
-    res.status(500).json({message:"Internal server error"})
+    console.error("Registration Error:", error.message);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
   }
-}
+};
 
-const loginUser = async(req,res)=>{
-  const {username,password} = req.body;
-  
+
+const loginUser = async (req, res) => {
+  console.log("login");
+  let { username, password } = req.body;
+  username = username?.trim();
+  password = password?.trim();
+  const pic = req.file; // Assuming multer middleware handles 'pic' as 'req.file'
+
   try {
-    if(!username || !password){
-      res.status(400)
-      throw new Error("All fields are required")
+    console.log("1");
+    // Validate input fields
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
     }
-    const existsUser = await UserModel.findOne({username})
-    if(!existsUser){
-      return res.status(400).json({Error:"User doesn't exists"})
+    
+    console.log("2");
+    // Check if the user exists
+    const existsUser = await UserModel.findOne({ username });
+    if (!existsUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User doesn't exist",
+      });
     }
-    const validPassword = await bcrypt.compare(password, existsUser.password)
-    if(!validPassword){
-      return res.status(400).json({Error:"username or password is incorrect"})
+    
+    console.log("3");
+    // Validate password
+    const validPassword = await bcrypt.compare(password, existsUser.password);
+    if (!validPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Username or password is incorrect",
+      });
+    }
+    console.log("4");
+    
+    // Upload profile picture to Cloudinary if present
+    if (pic) {
+      console.log("pic found");
+      const filePath = req.file.path;
+      try {
+        const result = await cloudinary.uploader.upload(filePath, {
+          folder: "recipeImages",
+          resource_type: 'image',
+        });
+        existsUser.profile_pic = result.secure_url;
+        await existsUser.save(); // Update user with new profile pic
+      } catch (err) {
+        console.error("Cloudinary upload error:", err.message);
+        return res.status(500).json({
+          success: false,
+          message: "Error uploading profile picture to Cloudinary",
+        });
+      }
+    }
+          console.log("5");
+          
+          // Generate token and set cookie if authentication is successful
+          const token = jwt.sign(
+            {
+              user: {
+                id: existsUser._id,
+                username: existsUser.username,
+                profile_pic: existsUser.profile_pic, // Use updated profile_pic
+              },
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: "5h" }
+          );
+          console.log("done");
+
+    return res
+      .cookie("access_token", token, {
+        httpOnly: true,
+        sameSite: "strict",
+        maxAge: 5 * 60 * 60 * 1000, // 5 hours
+        secure: process.env.NODE_ENV === "production",
+      })
+      .json({
+        success: true,
+        message: `Welcome back ${existsUser.username}`,
+        user: {
+          id: existsUser._id,
+          username: existsUser.username,
+          profile_pic: existsUser.profile_pic, // Use updated profile_pic
+        },
+      });
+  } catch (error) {
+    console.error("Error:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const getProfile = async (req, res) => {
+  try {
+    // Assuming the user ID is stored in the token, extract it
+    const userId = req.UserId;
+    const user = await UserModel.findById(userId).select('-password'); 
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
-    if (existsUser && validPassword ) {
-      const token = jwt.sign({
-        user:{
-          id:existsUser._id,
-          username:existsUser.username
-        }
-      },
-      process.env.JWT_SECRET,
-      {expiresIn:"12h"}
-      )
-      res.status(200).json({token, userID:existsUser._id})
+    return res.status(200).json({
+      success: true,
+      message: "Logged in successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Error fetching user profile:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const updateProfilePic = async (req, res) => {
+  try {
+    console.log("update pic BACKEND")
+    const userId = req.UserId;
+    const pic = req.file;
+    if (!pic) {
+      return res.status(404).json({
+        message: "pic not found",
+        success: false,
+      })
     }
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
+    
+    // Upload new profile picture to Cloudinary if present
+    if (pic) {
+      const filePath = req.file.path;
+      const result = await cloudinary.uploader.upload(filePath, {
+        folder: "recipeImages",
+        resource_type: 'image'
+      });
+
+      if(!result){
+        console.error("Cloudinary upload error:", err.message);
+        return res.status(500).json({
+          success: false,
+          message: "Error uploading profile picture",
+        });
+      }
+      user.profile_pic = result.secure_url ;
+    }
+
+    // Save updated user data
+    await user.save();
+    return res.status(200).json({
+      success: true,
+      message: "Updated ",
+      user: {
+        id: user._id,
+        username: user.username,
+        profile_pic: user.profile_pic,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating profile:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const deleteProfilePic = async(req,res)=>{
+  const userId = req.UserId;
+  try {
+    if(!userId){
+      return res.status(401).json({
+        message: "User not authorized",
+        success: false,
+      });
+    }
+
+    const user  = await UserModel.findById(userId);
+    if(!user){
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+    }
+    user.profile_pic = "";
+    await user.save();
+    return res.status(200).json({
+      message:"Deleted",
+      success: true,
+    })
 
   } catch (error) {
-    res.status(500).json({message:"Interanal server Error"})
+    console.error("Error updating profile:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
+
+const logout = async(req,res)=>{
+  try {
+    return res.cookie("access_token", "", {
+      maxAge: 0,
+    }).json({
+      message: "Logged out successfully",
+      success: true,
+    })
+
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({
+      error: "Internal server error",
+      success: false,
+    })
   }
 }
 
 
 
-export {registerUser, loginUser}
+export {registerUser,logout, loginUser, getProfile, updateProfilePic, deleteProfilePic};

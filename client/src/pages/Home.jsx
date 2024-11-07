@@ -1,92 +1,293 @@
-import axios from 'axios';
-import React, { useEffect, useState } from 'react'
-import { useGetUserID } from '../hooks/useGetUserID';
-import {useCookies} from "react-cookie"
+import React, { useContext, useEffect, useState } from "react";
+import { GlobalContext } from "../context/index";
+import { toast } from "react-toastify";
+import { Avatar } from "@mui/material";
+import Cookies from 'js-cookie';
+import {
+  FaEllipsisH,
+  FaRegHeart,
+  FaHeart,
+  FaBookmark,
+  FaRegBookmark,
+} from "react-icons/fa";
+import { Link, useNavigate } from "react-router-dom";
+import { TbLoader3, TbLoader } from "react-icons/tb";
+import { MdDelete } from "react-icons/md";
+import { FiEdit } from "react-icons/fi";
+import { Heart } from "lucide-react";
+import Pagination from '@mui/material/Pagination';
+import Stack from '@mui/material/Stack';
 
-export const Home = () => {
-  const userID = useGetUserID()
-  const [recipes,setRecipes] = useState([]);
-  const [srecipes, setSrecipes] = useState([])
-  const [cookies, _] = useCookies(["access_token"])
 
-  const fetchRecipe = async()=>{
-    try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/recipes`)
-      setRecipes(response.data)
-    } catch (error) {
-      console.error(error)
+const Home = () => {
+  const navigate = useNavigate();
+  const {
+    searchResults,
+    fetchRecipes,
+
+    page,
+    setPage,
+    totalPages,
+    fetchRequired,
+    user,
+    setIsAuthenticated,
+    setUser,
+    getfavouriteRecipes,
+    favoriteRecipes,
+    getAllLikedPosts,
+    recipesList,
+    setRecipesList,
+    addToFavorites,
+    loading,
+    likedPosts,
+    likePost,
+    dislikePost,
+    deletePost,
+  } = useContext(GlobalContext);
+
+  const [activePopup, setActivePopup] = useState(null);
+
+
+  const init = async () => {
+    const token = await Cookies.get('access_token');
+    if (token) {
+      setIsAuthenticated(true);
+      const userDATA = await JSON.parse(sessionStorage.getItem('userDATA'));
+      if (userDATA) {
+        setUser(userDATA);
+      }
+      await getAllLikedPosts();
+      await getfavouriteRecipes();
+    } else {
+      setIsAuthenticated(false);
     }
+    console.log("user: ", user);
   }
 
-  const savedRec = async()=>{
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/recipes/savedrecipes/${userID}`,{
-        headers:{authorization:cookies.access_token}
-      })
-      console.log("res",res)
-      console.log("data",res.data)
-      setSrecipes(res.data)
-    } catch (error) {
-      console.error(error)
-    }
-  }
 
-  const saveRecipe = async(recipeID)=>{
-    try {
-      // const userID = window.localStorage.getItem("userID")
-      const response = await axios.put(`${process.env.REACT_APP_API_URL}/recipes`,
-      {
-        userID,
-        recipeID
-      },
-      { 
-        headers:{authorization:cookies.access_token}
-      })
-      setSrecipes(response.data.savedRecipes)
-      console.log(response.data.savedRecipes)
-    } catch (error) {
-      console.error(error)
+  useEffect(() => {
+    if (searchResults) {
+      setRecipesList(searchResults);
     }
-  }
-  // check whether recipe is already saved or not
-  const isRecipeSaved = (id) => srecipes.includes(id)
+    if (!user) {
+      fetchRecipes(page);
+    }
+    if (user) {
+      init();
+      fetchRequired();
+    }
 
-  useEffect(()=>{
-    if(cookies.access_token) savedRec();
-    fetchRecipe()
-  }, [])
+  }, [user, page]);
+
+  const togglePopup = (id) => {
+    setActivePopup((prev) => (prev === id ? null : id));
+  };
+
+  const handleDeletePost = (id) => {
+    if (!user) {
+      toast.error("User not authorized");
+      navigate("/login");
+      return
+    }
+    deletePost(id);
+    // toast.success("Post deleted successfully");
+  };
+  const handleLikePost = (id) => {
+    if (!user) {
+      toast.error("User not authorized");
+      navigate("/login");
+      return
+    }
+    likePost(id);
+  };
+  const handleDislikePost = (id) => {
+    if (!user) {
+      toast.error("User not authorized");
+      navigate("/login");
+      return
+    }
+    dislikePost(id)
+  };
+  const handleBookmarkPost = (id) => {
+    if (!user) {
+      toast.error("User not authorized");
+      navigate("/login");
+      return
+    }
+    addToFavorites(id);
+  };
+
+  const handleChange = (event, value) => {
+    event.preventDefault();
+    setPage(value);
+    // if (!user) fetchRecipes();
+    // else fetchRequired();
+  };
 
 
   return (
-    <div>
-      <h1 className='heading'>Recipes</h1>
-      <ul>
-        {recipes &&
-        recipes.map((recipe)=>(
-          <li className='card' key={recipe._id}>
-            <div>
-              <h2>{recipe.name}</h2>
+    <div className=" min-h-screen mx-auto py-8">
+      <h1 className="text-2xl font-bold text-center text-gray-800 mb-10">
+        Explore Latest Posts
+      </h1>
 
-              <button className='save' onClick={()=>saveRecipe(recipe._id)} 
-              disabled={isRecipeSaved(recipe._id)}>
-                 {isRecipeSaved(recipe._id)?"Saved":"Save"} 
-              </button>
+      <div className={`flex flex-wrap justify-center  gap-8`}>
+        {recipesList?.length > 0 ? (
+          recipesList.map((item) => (
+            <div
+              key={item._id}
+              className="max-w-xs w-full sm:w-80 bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 transition-transform transform hover:scale-105"
+            >
+              {!loading ? (
+                <>
+                  <div className="flex justify-between items-center px-4 py-2">
+                    <div className="flex items-center">
+                      {item && item.owner.profile_pic ?
+                        (<Avatar
+                          sx={{ width: 35, height: 35 }}
+                          alt={item.owner?.username}
+                          src={item.owner?.profile_pic}
+                        />) :
+                        <Avatar className="outline m-2"
+                          sx={{ width: 35, height: 35 }}
+                          alt={item.owner?.username ? item.owner?.username.charAt(0).toUpperCase() : ""} 
+                          src={item.profile_pic} >
+                          <span className="  text-gray-600">
+                            {item.owner?.username ? item.owner?.username.charAt(0).toUpperCase() : ""}
+                          </span>
+                        </Avatar>
+                      }
+                      <div className="ml-3">
+                        <span className="block text-gray-700 font-medium">
+                          {item.owner?.username || "Unknown User"}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {item.updatedAt &&
+                            new Date(item.updatedAt).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      {/* Dynamic Delete Button - Left of Ellipsis Button */}
+                      {user && activePopup === item._id && (
+                        ((user.id).toString() === (item.owner._id).toString()) ?
+                          (<>
+                            <div className="relative left-auto text-sm  z-50  mr-4">
+                              <Link to={`/edit-post/${item._id}`}>
+                                <FiEdit className="text-blue-600 hover:cursor-pointer h-6 w-6" />
+                              </Link>
+                            </div>
+                            <div className="relative left-auto text-sm hover:cursor-pointer z-50 mr-4">
+                              <MdDelete className="text-red-500 h-7 w-7" onClick={() => handleDeletePost(item._id)} />
+                            </div>
+                          </>) :
+                          (<>
+                            {/* <div className="relative left-auto text-sm  z-50  mr-4">
+                            <FiEdit className="text-blue-600 hover:cursor-pointer h-6 w-6" onClick={() => handleDeletePost(item._id)}/>
+                          </div> */}
+                            <div className="relative left-auto text-sm hover:cursor-pointer z-50 mr-4">
+                              <Heart className="text-red-500 h-7 w-7" onClick={() => handleDeletePost(item._id)} />
+                            </div>
+                          </>)
+                      )}
+                      {/* Ellipsis Button */}
+                      <button
+                        onClick={() => togglePopup(item._id)}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <FaEllipsisH />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="h-48 sm:h-56 overflow-hidden">
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  <div className="p-4">
+                    <h3 className="text-xl font-semibold text-gray-800 truncate">
+                      {item.name}
+                    </h3>
+                    <p className="text-gray-600 mt-1 mb-4 text-sm sm:text-base">
+                      {item.instructions.split(".")[0]}...
+                    </p>
+
+                    <div className="flex justify-between items-center">
+                      <Link
+                        to={`/recipe-item/${item._id}`}
+                        className="text-xs sm:text-sm py-2 px-4 bg-black text-white rounded-lg hover:bg-gray-800"
+                      >
+                        Show Details
+                      </Link>
+                      <div className="flex space-x-4">
+                        <button
+                          className="text-gray-400"
+                          onClick={() =>
+                            likedPosts?.includes(item._id) ? handleDislikePost(item._id) : handleLikePost(item._id)
+                          }
+                        >
+                          {likedPosts?.includes(item._id) ? (
+                            <div className="flex flex-row justify-center gap-2 items-center">
+                              <FaHeart className="text-lg text-red-500  sm:text-2xl" />
+                              <span>{item.likes.length}</span>
+                            </div>
+                          ) : (
+                            <div className="flex flex-row justify-center gap-2 items-center">
+                              <FaRegHeart className="text-lg text-gray-500 sm:text-2xl" />
+                              <span>{item.likes.length}</span>
+                            </div>
+
+                          )}
+                        </button>
+                        <button onClick={() => handleBookmarkPost(item._id)}
+                          className="text-gray-400"
+                        >
+                          {favoriteRecipes?.includes(item._id) ? (
+                            <FaBookmark className="text-lg sm:text-2xl font-bold text-gray-500 " />
+                          ) : (
+                            <FaRegBookmark className="text-lg font-bold sm:text-2xl text-gray-500 " />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-center items-center ">
+                  <TbLoader className="loader animate-spin h-5 w-5 text-gray-700" />
+                </div>
+              )}
+
             </div>
-            <div className='ingredients'>
-              <h3>Ingredients</h3>
-              {recipe.ingredients.map((ingredient,idx)=>{
-                return <p key={idx}>{idx+1}. {ingredient}</p>
-              })}
-            </div>
-            <img src={recipe.imageUrl?recipe.imageUrl:""} alt={recipe.name} />
-            <div className='instructions'>
-              <h3>Instructions</h3>
-              <p>{recipe.instructions?recipe.instructions:"No instructions"}</p>
-            </div>
-            <p className='txt'>Cooking Time: {recipe.cookingTime} minutes</p>
-          </li>
-        ))}
-      </ul>
+          ))
+        ) : (
+          
+          loading ?
+            <TbLoader3 className=" loader  animate-spin h-16 w-16 text-violet-600" /> :
+            <h2>No results found!</h2>
+        )}
+      </div>
+      {!loading && recipesList?.length > 0 &&
+        <div className=" py-8 px-14">
+          <Stack spacing={2}>
+            {/* <Typography>Page: {page}</Typography> */}
+            <Pagination className="text-bold" count={totalPages} page={page} onChange={handleChange} />
+          </Stack>
+        </div>
+      }
     </div>
-  )
-}
+  );
+};
+
+export default Home;
+
+
