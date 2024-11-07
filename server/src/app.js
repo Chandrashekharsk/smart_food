@@ -1,9 +1,10 @@
+import dotenv from "dotenv";
+dotenv.config({})
 import connectDB from "./utils/dbConfig.js";
 import { userRouter } from "./routes/users.js";
 import { recipesRouter } from "./routes/recipes.js";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import { verifyToken } from "./middleware/validateToken.js";
 
