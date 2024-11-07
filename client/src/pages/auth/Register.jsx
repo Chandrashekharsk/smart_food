@@ -1,10 +1,8 @@
-import React, { useContext, useState } from "react";
-import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useContext } from "react";
+import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import banner from "../../assets/newlg.jpeg";
 import { GlobalContext } from "../../context";
