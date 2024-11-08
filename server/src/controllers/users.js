@@ -1,6 +1,6 @@
-import { UserModel } from "../models/users.js";
-import dotenv from "dotenv"
+import dotenv from "dotenv";
 dotenv.config()
+import { UserModel } from "../models/users.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs"
 import cloudinary from "../utils/cloudinaryConfig.js"
@@ -61,7 +61,6 @@ const loginUser = async (req, res) => {
   const pic = req.file; // Assuming multer middleware handles 'pic' as 'req.file'
 
   try {
-    console.log("1");
     // Validate input fields
     if (!username || !password) {
       return res.status(400).json({
@@ -70,7 +69,6 @@ const loginUser = async (req, res) => {
       });
     }
     
-    console.log("2");
     // Check if the user exists
     const existsUser = await UserModel.findOne({ username });
     if (!existsUser) {
@@ -80,7 +78,6 @@ const loginUser = async (req, res) => {
       });
     }
     
-    console.log("3");
     // Validate password
     const validPassword = await bcrypt.compare(password, existsUser.password);
     if (!validPassword) {
@@ -89,7 +86,6 @@ const loginUser = async (req, res) => {
         message: "Username or password is incorrect",
       });
     }
-    console.log("4");
     
     // Upload profile picture to Cloudinary if present
     if (pic) {
@@ -110,7 +106,6 @@ const loginUser = async (req, res) => {
         });
       }
     }
-          console.log("5");
           
           // Generate token and set cookie if authentication is successful
           const token = jwt.sign(
@@ -124,16 +119,15 @@ const loginUser = async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: "5h" }
           );
-          console.log("done");
+          console.log("login done");
 
     return res
       .cookie("access_token", token, {
         httpOnly: true,
-        maxAge: 5 * 60 * 60 * 1000, // 5 hours
-        sameSite: "none",    // production
-        secure: true,        // production
-        // sameSite: "strict",  // local 
-        // secure: false,          // local
+        maxAge: 5 * 60 * 60 * 1000, 
+        secure: process.env.NODE_ENV === "production", 
+        sameSite: "none",    // cross-origin
+        // sameSite: "strict",    // same-origin
       })
       .json({
         success: true,
