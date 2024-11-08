@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { GlobalContext } from "../context/index";
 import { FaHeart } from "react-icons/fa";
 import { IoMdBookmarks, IoIosSearch } from "react-icons/io";
@@ -15,7 +15,9 @@ export default function Nav() {
   const [searchQuery, setSearchQuery] = useState("");
   const [picPreview, setPicPreview] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  
+  const [isHome, setIsHome] = useState(false);
+  const location = useLocation();
+
   const { user, loading, setSearchResults, fetchRecipes, searching, logout, editProfilePicture, deleteProfilePicture, init, page, handleSearch } = useContext(GlobalContext);
   const dropdownRef = useRef(null);
   const picInputRef = useRef(null);
@@ -51,11 +53,12 @@ export default function Nav() {
   const handleUploadNewPicture = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setPicPreview(URL.createObjectURL(file)); 
+      setPicPreview(URL.createObjectURL(file));
     }
   };
 
   useEffect(() => {
+    if (location.pathname === "/") setIsHome(true);
     init();
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -76,9 +79,9 @@ export default function Nav() {
     e.preventDefault();
     handleSearch(searchQuery);
   };
+  console.log("location ", location);
 
-
-  const handleclick=async ()=>{
+  const handleclick = async () => {
     setSearchResults(null);
     fetchRecipes(page);
   }
@@ -100,11 +103,27 @@ export default function Nav() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        {searching ? 
+        {searching ?
           <AiOutlineLoading3Quarters className="absolute right-4 animate-spin text-xl h-4 w-4" /> :
           <IoIosSearch className="absolute right-4 text-xl cursor-pointer" />
         }
       </form>
+
+      {/* { isHome &&
+        <form className="relative flex items-center justify-center w-full lg:w-auto" onSubmit={handleSubmit}>
+        <input
+          type="text"
+          name="search"
+          placeholder="Enter keywords..."
+          className="w-full lg:w-96 p-2 pl-8 rounded-full outline-none bg-white/75 shadow-lg shadow-blue-200 focus:shadow-red-200"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        {searching ? 
+          <AiOutlineLoading3Quarters className="absolute right-4 animate-spin text-xl h-4 w-4" /> :
+          <IoIosSearch className="absolute right-4 text-xl cursor-pointer" />
+        }
+      </form>} */}
 
       <ul className="flex gap-5 items-center text-center">
         {user ? (
@@ -182,7 +201,7 @@ export default function Nav() {
                 className="text-sm text-gray-600 file:py-2 file:px-4 file:rounded-lg file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
               />
               {picPreview && <button onClick={handleEditProfilePicture} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-              {loading? "Uploading...": "Upload"}
+                {loading ? "Uploading..." : "Upload"}
               </button>}
             </div>
           </div>
