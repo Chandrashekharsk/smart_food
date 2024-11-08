@@ -129,6 +129,7 @@ const getRecipe = async (req, res) => {
 };
 
 const getRecipe2 = async (req, res) => {
+  clg("init backend request");
   const {page, limit} = req.query;
   try {
     const recipes = await RecipeModel.find()
