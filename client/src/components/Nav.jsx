@@ -15,7 +15,6 @@ export default function Nav() {
   const [searchQuery, setSearchQuery] = useState("");
   const [picPreview, setPicPreview] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [isHome, setIsHome] = useState(false);
   const location = useLocation();
 
   const { user, loading, setSearchResults, fetchRecipes, searching, logout, editProfilePicture, deleteProfilePicture, init, page, handleSearch } = useContext(GlobalContext);
@@ -58,7 +57,6 @@ export default function Nav() {
   };
 
   useEffect(() => {
-    if (location.pathname === "/") setIsHome(true);
     init();
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -79,7 +77,6 @@ export default function Nav() {
     e.preventDefault();
     handleSearch(searchQuery);
   };
-  console.log("location ", location);
 
   const handleclick = async () => {
     setSearchResults(null);
@@ -94,22 +91,7 @@ export default function Nav() {
         </NavLink>
       </h2>
 
-      <form className="relative flex items-center justify-center w-full lg:w-auto" onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="search"
-          placeholder="Enter keywords..."
-          className="w-full lg:w-96 p-2 pl-8 rounded-full outline-none bg-white/75 shadow-lg shadow-blue-200 focus:shadow-red-200"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        {searching ?
-          <AiOutlineLoading3Quarters className="absolute right-4 animate-spin text-xl h-4 w-4" /> :
-          <IoIosSearch className="absolute right-4 text-xl cursor-pointer" />
-        }
-      </form>
-
-      {/* { isHome &&
+      { location.pathname === "/" &&
         <form className="relative flex items-center justify-center w-full lg:w-auto" onSubmit={handleSubmit}>
         <input
           type="text"
@@ -123,7 +105,7 @@ export default function Nav() {
           <AiOutlineLoading3Quarters className="absolute right-4 animate-spin text-xl h-4 w-4" /> :
           <IoIosSearch className="absolute right-4 text-xl cursor-pointer" />
         }
-      </form>} */}
+      </form>}
 
       <ul className="flex gap-5 items-center text-center">
         {user ? (

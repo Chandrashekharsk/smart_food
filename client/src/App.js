@@ -12,13 +12,14 @@ import Footer from "./components/Footer";
 import { EditPost } from "./components/EditPost";
 import LikedRecipesList from "./pages/LikedRecipesList";
 import Contact from "./pages/Contact";
+import { useEffect, useState } from "react";
 
 
 function App() {
+
   return (
     <>
       <div className='App'>
-        
         <Router>
           <GlobalState>
           <Nav/>
