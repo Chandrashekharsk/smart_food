@@ -108,10 +108,12 @@ export default function GlobalState({ children }) {
     setLoading(true);
     try {
       // if(!page) page=1;
-      const response = await axios.get(`${API_URL}/recipes`,{
-        // Pass page and limit as query parameters
-        params:{page, limit}, 
-      });
+      const response = await axios.get(`${API_URL}/recipes`,
+        {
+          withCredentials:true,
+          params:{page, limit},
+        }
+      );
       setRecipesList(response.data.recipes);
       setPage(response.data.page);
       setTotalPages(response.data.pages);
