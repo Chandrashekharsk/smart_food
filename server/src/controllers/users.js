@@ -160,25 +160,24 @@ const loginUser = async (req, res) => {
     console.log("login done");
 
     // Set secure cookie options based on environment
-    const isProduction = process.env.NODE_ENV === "production";
+    // const isProduction = process.env.NODE_ENV === "production";
 
     return res
       .cookie("access_token", token, {
         httpOnly: true,
         maxAge: 5 * 60 * 60 * 1000,
-        secure: isProduction, // set to true in production
-        sameSite: isProduction ? "none" : "lax", // "none" for cross-site cookies, "lax" for dev
+        // secure: isProduction, // set to true in production
+        // sameSite: isProduction ? "none" : "lax", // "none" for cross-site cookies, "lax" for dev
 
         // for production
-        // secure: true,
-        // sameSite: "none",
+        secure: true,
+        sameSite: "none",
         // for development
         // secure: false,
         // sameSite: "strict",
       })
       .json({
         success: true,
-        jwtToken: token,
         message: `Welcome back ${existsUser.username}`,
         user: {
           id: existsUser._id,

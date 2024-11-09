@@ -375,18 +375,16 @@ export default function GlobalState({ children }) {
 
       if (res.data.success) {
         const checkToken = await axios.get(`${API_URL}/auth/checkauth`, { withCredentials: true });
-        if (checkToken.data.verificationError) {
+        if (!checkToken.data.success) {
           toast.error("Login failed!");
           toast.info("Please enable cookies in your browser settings to continue");
-          navigate("/");
-          return;
         } else {
           toast.success(res.data.message);
           setUser(res.data.user);
           sessionStorage.setItem('userDATA', JSON.stringify(res.data.user));
           await fetchRequired();
-          navigate("/");
         }
+        navigate("/");
       }
     } catch (err) {
       console.error("Error during login:", err);
@@ -396,44 +394,6 @@ export default function GlobalState({ children }) {
       setLoading(false);
     }
   };
-  // const onLogin = async (data) => {
-  //   setLoading(true);
-  //   try {
-  //     // Create FormData for multipart/form-data
-  //     const formData = new FormData();
-  //     formData.append("username", data.username);
-  //     formData.append("password", data.password);
-  //     if (data.pic && data.pic[0]) {
-  //       formData.append("pic", data.pic[0]); // Append the file directly
-  //     }
-
-  //     // Send request with FormData
-  //     const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/login`,
-  //       formData, { withCredentials: true}
-  //     );
-
-  //     if (res.data.success) {
-  //       const checkToken = await axios.get(`${API_URL}/auth/checkauth`,{withCredentials:true});
-  //       if(!checkToken.data.success){
-  //         toast.error("Cookies are required for a secure login experience. Please enable cookies in your browser settings to continue.");
-  //         navigate("/");
-  //         return;
-  //       }
-
-  //       toast.success(res.data.message);
-  //       setUser(res.data.user);
-  //       sessionStorage.setItem('userDATA', JSON.stringify(res.data.user));
-  //       await fetchRequired();
-  //       navigate("/");
-  //     }
-  //   } catch (err) {
-  //     console.error("Error during login:", err);
-  //     toast.error(err.response.data.message || "Login failed"); // Use server message if available
-
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const fetchRequired = async () => {
     await getAllLikedPosts();
