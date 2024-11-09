@@ -383,7 +383,8 @@ const getLikedPosts = async(req, res)=>{
 }
 
 const searchRecipe = async (req, res) => {
-  const { query } = req.params;
+  const { query, searchPagination = 1 } = req.params;
+  const limit = parseInt(req.query.limit) || 10;  // Set a default limit if not provided
   console.log("Query start:", query);
 
   if (!query || !query.trim()) {
@@ -406,30 +407,39 @@ const searchRecipe = async (req, res) => {
     // Extract user IDs if any matches are found
     const userIds = matchingUsers.map(user => user._id);
 
-    // Step 2: Find recipes matching keywords or owner IDs
+    // Step 2: Construct search conditions
     const searchConditions = [
       { name: { $in: keywords } },
       { instructions: { $in: keywords } },
       { ingredients: { $in: keywords } },
     ];
 
-    // Only add owner condition if there are matching user IDs
     if (userIds.length > 0) {
       searchConditions.push({ owner: { $in: userIds } });
     }
 
-    // Perform the query using $or with the dynamic conditions array
+    // Step 3: Calculate total matching recipes count for pagination
+    const totalResults = await RecipeModel.countDocuments({ $or: searchConditions });
+
+    // Step 4: Query the recipes with pagination
     const results = await RecipeModel.find({
       $or: searchConditions
-    }).populate({
-      path: "owner",
-      select: "username profile_pic",
-    });
+    })
+      .populate({
+        path: "owner",
+        select: "username profile_pic",
+      })
+      .skip((searchPagination - 1) * limit)
+      .limit(limit);
 
+    // Send the response
     return res.status(200).json({
       success: true,
-      message: "Here are the found results",
+      message: "Found results",
       results,
+      page: parseInt(searchPagination),
+      pages: Math.ceil(totalResults / limit),
+      totalResults,
     });
   } catch (error) {
     console.error(error);

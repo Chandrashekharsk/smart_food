@@ -4,6 +4,7 @@ import { useCookies } from "react-cookie";
 import Cookies from 'js-cookie';
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { setCookie, deleteCookie } from "../utils/cookieFuncs";
 
 export const GlobalContext = createContext();
 
@@ -18,13 +19,16 @@ export default function GlobalState({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [favoriteRecipes, setFavoriteRecipes] = useState();
   const [likedPosts, setLikedPosts] = useState([]);
-  const [searchResults, setSearchResults] = useState();
+  const [searchResults, setSearchResults] = useState(null);
   const [page, setPage] = useState(1); // Current page
   const [totalPages, setTotalPages] = useState(0);
+  const [searchPagination, setSearchPagination] = useState(1);
+  const [searchPaginationTotal, setSearchPaginationTotal] = useState(0);
   const navigate = useNavigate();
   const [editableRecipe, setEditableRecipe] = useState({});
   const [editableImagePreview, setEditableImagePreview] = useState();
-  const[searching, setSearching] = useState();
+  const [searching, setSearching] = useState();
+  const [hidePagination, setHidePagination] = useState(false);
   const API_URL = process.env.REACT_APP_API_URL;
   const limit = 6; // Items per page
 
@@ -33,10 +37,10 @@ export default function GlobalState({ children }) {
     setLoading(true);
     try {
       const res = await axios.post(`${API_URL}/recipes`, newRecipeData, { withCredentials: true });
-  
+
       if (res.data.success) {
         toast.success("Created");
-  
+
         // Invalidate cache for the current page
         localStorage.removeItem(`curr_page_${page}`);
         fetchRecipes(page);
@@ -84,14 +88,14 @@ export default function GlobalState({ children }) {
     }
   };
 
-  const editPost = async(recipeId,postData)=>{
+  const editPost = async (recipeId, postData) => {
     setLoading(true);
     try {
       const res = await axios.put(`${API_URL}/recipes/update-recipe/${recipeId}`,
         postData,
-        {withCredentials:true}
+        { withCredentials: true }
       )
-      if(res.data.success){
+      if (res.data.success) {
         toast.success("Post updated");
         fetchRequired();
         navigate("/")
@@ -99,7 +103,7 @@ export default function GlobalState({ children }) {
       }
     } catch (error) {
       toast.error(error.res.data.message || "couldn't edit post")
-    }finally {
+    } finally {
       setLoading(false);
     }
   }
@@ -110,8 +114,8 @@ export default function GlobalState({ children }) {
       // if(!page) page=1;
       const response = await axios.get(`${API_URL}/recipes`,
         {
-          withCredentials:true,
-          params:{page, limit},
+          withCredentials: true,
+          params: { page, limit },
         }
       );
       setRecipesList(response.data.recipes);
@@ -120,7 +124,7 @@ export default function GlobalState({ children }) {
 
     } catch (error) {
       console.error("Error fetching recipes:", error);
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
@@ -188,11 +192,11 @@ export default function GlobalState({ children }) {
   const getfavouriteRecipes = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/recipes/favorites`, { withCredentials:true  });
+      const res = await axios.get(`${API_URL}/recipes/favorites`, { withCredentials: true });
 
       if (res.data.success) {
         setFavoriteRecipes(res.data?.savedRecipes);
-      } 
+      }
     } catch (error) {
       console.error("Error fetching favorite recipes:", error);
       toast.error("Failed to load recipes. Please try again.");
@@ -243,18 +247,23 @@ export default function GlobalState({ children }) {
     }
   };
 
-  const handleSearch = async (searchText) => {
-    if(!searchText && !searchText?.trim()) return;
+  const handleSearch = async (searchText, searchPagination) => {
+    if (!searchText && !searchText?.trim()) return;
     setSearching(true);
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/recipes/search/${encodeURIComponent(searchText)}`, {
-        withCredentials: true
-      });
+      const response = await axios.get(`${API_URL}/recipes/search/${encodeURIComponent(searchText)}`,
+        {
+          withCredentials: true,
+          params: { searchPagination, limit },
+        }
+      );
       if (response.data.success) {
-  
+        setHidePagination(true);
+        setSearchPagination(response.data.page);
+        setSearchPaginationTotal(response.data.pages);
         setRecipesList(response.data.results);
-      } 
+      }
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {
@@ -304,8 +313,8 @@ export default function GlobalState({ children }) {
       const res = await axios.delete(`${API_URL}/auth/delete-profilepic`, { withCredentials: true });
       if (res.data.success) {
         toast.success(res.data.message);
-        setUser({...user,"profile_pic": null})
-        sessionStorage.setItem('userDATA', JSON.stringify({...user,"profile_pic": null}));
+        setUser({ ...user, "profile_pic": null })
+        sessionStorage.setItem('userDATA', JSON.stringify({ ...user, "profile_pic": null }));
       } else {
         toast.error(res.data.message);
       }
@@ -336,7 +345,7 @@ export default function GlobalState({ children }) {
 
       if (res.data.success) {
         toast.success(res.data.message);
-        setUser({...user,"profile_pic":res.data.user.profile_pic})
+        setUser({ ...user, "profile_pic": res.data.user.profile_pic })
         sessionStorage.setItem('userDATA', JSON.stringify(res.data.user));
       } else {
         toast.error(res.data.message);
@@ -361,18 +370,23 @@ export default function GlobalState({ children }) {
 
       // Send request with FormData
       const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/login`,
-        formData, 
-        {
-          withCredentials: true,
-        }
+        formData, { withCredentials: true }
       );
 
       if (res.data.success) {
-        toast.success(res.data.message);
-        setUser(res.data.user);
-        sessionStorage.setItem('userDATA', JSON.stringify(res.data.user));
-        await fetchRequired();
-        navigate("/");
+        const checkToken = await axios.get(`${API_URL}/auth/checkauth`, { withCredentials: true });
+        if (checkToken.data.verificationError) {
+          toast.error("Login failed!");
+          toast.info("Please enable cookies in your browser settings to continue");
+          navigate("/");
+          return;
+        } else {
+          toast.success(res.data.message);
+          setUser(res.data.user);
+          sessionStorage.setItem('userDATA', JSON.stringify(res.data.user));
+          await fetchRequired();
+          navigate("/");
+        }
       }
     } catch (err) {
       console.error("Error during login:", err);
@@ -382,12 +396,51 @@ export default function GlobalState({ children }) {
       setLoading(false);
     }
   };
+  // const onLogin = async (data) => {
+  //   setLoading(true);
+  //   try {
+  //     // Create FormData for multipart/form-data
+  //     const formData = new FormData();
+  //     formData.append("username", data.username);
+  //     formData.append("password", data.password);
+  //     if (data.pic && data.pic[0]) {
+  //       formData.append("pic", data.pic[0]); // Append the file directly
+  //     }
+
+  //     // Send request with FormData
+  //     const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/login`,
+  //       formData, { withCredentials: true}
+  //     );
+
+  //     if (res.data.success) {
+  //       const checkToken = await axios.get(`${API_URL}/auth/checkauth`,{withCredentials:true});
+  //       if(!checkToken.data.success){
+  //         toast.error("Cookies are required for a secure login experience. Please enable cookies in your browser settings to continue.");
+  //         navigate("/");
+  //         return;
+  //       }
+
+  //       toast.success(res.data.message);
+  //       setUser(res.data.user);
+  //       sessionStorage.setItem('userDATA', JSON.stringify(res.data.user));
+  //       await fetchRequired();
+  //       navigate("/");
+  //     }
+  //   } catch (err) {
+  //     console.error("Error during login:", err);
+  //     toast.error(err.response.data.message || "Login failed"); // Use server message if available
+
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const fetchRequired = async () => {
     await getAllLikedPosts();
     await getfavouriteRecipes();
     await fetchRecipes(page);
   }
+
 
   async function getRecipeDetails(recipeId) {
     setLoading(true);
@@ -414,6 +467,8 @@ export default function GlobalState({ children }) {
     <GlobalContext.Provider
       value={{
         setSearchResults,
+        setHidePagination,
+        hidePagination,
         getRecipeDetails,
         recipeDetailsData,
         onRegister,
@@ -430,6 +485,9 @@ export default function GlobalState({ children }) {
         loading,
         searching,
         setSearching,
+        searchPagination,
+        searchPaginationTotal,
+        setSearchPagination,
 
         setLoading,
         user,

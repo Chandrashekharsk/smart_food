@@ -7,7 +7,11 @@ export const verifyToken = async (req, res, next) => {
     console.log("Token:", token);
 
     if (!token) {
-      return res.status(401).json({ message: "User not authenticated", status: false });
+      return res.status(401).json({
+        message: "Missing token Credentials",
+        success: false,
+        verificationError:true,
+      });
     }
 
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
@@ -21,6 +25,6 @@ export const verifyToken = async (req, res, next) => {
     });
   } catch (err) {
     console.error("Error:", err.message);
-    return res.status(500).json({ error: "Internal server error", success: false });
+    return res.status(500).json({ message: "Internal server error", success: false });
   }
 };

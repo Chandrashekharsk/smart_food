@@ -30,8 +30,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6 ">
-      <div className="flex flex-col mx-9 md:mx-auto md:flex-row items-center justify-center w-full max-w-4xl bg-white rounded-lg shadow-lg overflow-hidden">
+    <div className="min-h-screen sm:px-4  flex items-center justify-center bg-gray-100  ">
+      <div className="flex flex-col  md:flex-row items-center justify-center w-full max-w-4xl bg-white rounded-lg shadow-lg overflow-hidden">
         
         {/* Form Section */}
         <div className="w-full md:w-1/2 p-8">

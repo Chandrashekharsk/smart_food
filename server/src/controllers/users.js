@@ -1,35 +1,73 @@
 import dotenv from "dotenv";
-dotenv.config()
+dotenv.config();
 import { UserModel } from "../models/users.js";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs"
-import cloudinary from "../utils/cloudinaryConfig.js"
+import bcrypt from "bcryptjs";
+import cloudinary from "../utils/cloudinaryConfig.js";
+
+const checkToken = async (req,res) => {
+  console.log("check token")
+  try {
+    const token =
+      req.cookies?.access_token ||
+      (req.headers.authorization && req.headers.authorization.split(" ")[1]);
+
+    console.log("in check token")
+    if (token) {
+      console.log("intoken found")
+      return res.status(200).json({
+        success: true,
+        message: "token verified",
+        verificationError: false,
+      });
+    }
+    if(!token){
+      console.log("intoken not found ")
+      return res.status(200).json({
+        success: false,
+        message: "token couldn't verified",
+        verificationError: false,
+      });
+    }
+  } catch (error) {
+    console.error("Token checking Error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      verificationError:true,
+    });
+  }
+};
 
 const registerUser = async (req, res) => {
   try {
-    console.log('Registering new user');
+    console.log("Registering new user");
     let { username, password } = req.body;
-    console.log('Received username and password:', username, password);
-    
+    console.log("Received username and password:", username, password);
+
     username = username?.trim();
     password = password?.trim();
 
     // Validate input fields
     if (!username || !password) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required" });
     }
 
     // Check if user already exists
-    console.log("checking")
+    console.log("checking");
     const userExists = await UserModel.findOne({ username });
     if (userExists) {
-      return res.status(400).json({ success: false, message: "User already exists" });
+      return res
+        .status(400)
+        .json({ success: false, message: "User already exists" });
     }
-    console.log("doesnt exist user")
+    console.log("doesnt exist user");
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+
     // Create new user document
     const user = new UserModel({
       username,
@@ -48,7 +86,7 @@ const registerUser = async (req, res) => {
     console.error("Registration Error:", error.message);
     res.status(500).json({
       success: false,
-      error: "Internal server error",
+      message: "Internal server error",
     });
   }
 };
@@ -68,7 +106,7 @@ const loginUser = async (req, res) => {
         message: "All fields are required",
       });
     }
-    
+
     // Check if the user exists
     const existsUser = await UserModel.findOne({ username });
     if (!existsUser) {
@@ -77,7 +115,7 @@ const loginUser = async (req, res) => {
         message: "User doesn't exist",
       });
     }
-    
+
     // Validate password
     const validPassword = await bcrypt.compare(password, existsUser.password);
     if (!validPassword) {
@@ -86,7 +124,7 @@ const loginUser = async (req, res) => {
         message: "Username or password is incorrect",
       });
     }
-    
+
     // Upload profile picture to Cloudinary if present
     if (pic) {
       console.log("pic found");
@@ -94,7 +132,7 @@ const loginUser = async (req, res) => {
       try {
         const result = await cloudinary.uploader.upload(filePath, {
           folder: "recipeImages",
-          resource_type: 'image',
+          resource_type: "image",
         });
         existsUser.profile_pic = result.secure_url;
         await existsUser.save(); // Update user with new profile pic
@@ -106,32 +144,41 @@ const loginUser = async (req, res) => {
         });
       }
     }
-          
-          // Generate token and set cookie if authentication is successful
-          const token = jwt.sign(
-            {
-              user: {
-                id: existsUser._id,
-                username: existsUser.username,
-                profile_pic: existsUser.profile_pic, // Use updated profile_pic
-              },
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: "5h" }
-          );
-          console.log("login done");
+
+    // Generate token and set cookie if authentication is successful
+    const token = jwt.sign(
+      {
+        user: {
+          id: existsUser._id,
+          username: existsUser.username,
+          profile_pic: existsUser.profile_pic, // Use updated profile_pic
+        },
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "5h" }
+    );
+    console.log("login done");
+
+    // Set secure cookie options based on environment
+    const isProduction = process.env.NODE_ENV === "production";
 
     return res
       .cookie("access_token", token, {
         httpOnly: true,
-        maxAge: 5 * 60 * 60 * 1000, 
-        secure: true, 
-        sameSite: "none", 
-        // secure: false, 
-        // sameSite: "strict",    // same-origin
+        maxAge: 5 * 60 * 60 * 1000,
+        secure: isProduction, // set to true in production
+        sameSite: isProduction ? "none" : "lax", // "none" for cross-site cookies, "lax" for dev
+
+        // for production
+        // secure: true,
+        // sameSite: "none",
+        // for development
+        // secure: false,
+        // sameSite: "strict",
       })
       .json({
         success: true,
+        jwtToken: token,
         message: `Welcome back ${existsUser.username}`,
         user: {
           id: existsUser._id,
@@ -152,7 +199,7 @@ const getProfile = async (req, res) => {
   try {
     // Assuming the user ID is stored in the token, extract it
     const userId = req.UserId;
-    const user = await UserModel.findById(userId).select('-password'); 
+    const user = await UserModel.findById(userId).select("-password");
 
     if (!user) {
       return res.status(404).json({
@@ -177,14 +224,14 @@ const getProfile = async (req, res) => {
 
 const updateProfilePic = async (req, res) => {
   try {
-    console.log("update pic BACKEND")
+    console.log("update pic BACKEND");
     const userId = req.UserId;
     const pic = req.file;
     if (!pic) {
       return res.status(404).json({
         message: "pic not found",
         success: false,
-      })
+      });
     }
 
     const user = await UserModel.findById(userId);
@@ -194,23 +241,23 @@ const updateProfilePic = async (req, res) => {
         message: "Not authenticated",
       });
     }
-    
+
     // Upload new profile picture to Cloudinary if present
     if (pic) {
       const filePath = req.file.path;
       const result = await cloudinary.uploader.upload(filePath, {
         folder: "recipeImages",
-        resource_type: 'image'
+        resource_type: "image",
       });
 
-      if(!result){
+      if (!result) {
         console.error("Cloudinary upload error:", err.message);
         return res.status(500).json({
           success: false,
           message: "Error uploading profile picture",
         });
       }
-      user.profile_pic = result.secure_url ;
+      user.profile_pic = result.secure_url;
     }
 
     // Save updated user data
@@ -233,18 +280,18 @@ const updateProfilePic = async (req, res) => {
   }
 };
 
-const deleteProfilePic = async(req,res)=>{
+const deleteProfilePic = async (req, res) => {
   const userId = req.UserId;
   try {
-    if(!userId){
+    if (!userId) {
       return res.status(401).json({
         message: "User not authorized",
         success: false,
       });
     }
 
-    const user  = await UserModel.findById(userId);
-    if(!user){
+    const user = await UserModel.findById(userId);
+    if (!user) {
       if (!user) {
         return res.status(404).json({
           success: false,
@@ -255,10 +302,9 @@ const deleteProfilePic = async(req,res)=>{
     user.profile_pic = "";
     await user.save();
     return res.status(200).json({
-      message:"Deleted",
+      message: "Deleted",
       success: true,
-    })
-
+    });
   } catch (error) {
     console.error("Error updating profile:", error.message);
     return res.status(500).json({
@@ -266,26 +312,33 @@ const deleteProfilePic = async(req,res)=>{
       message: "Internal server error",
     });
   }
-}
+};
 
-const logout = async(req,res)=>{
+const logout = async (req, res) => {
   try {
-    return res.cookie("access_token", "", {
-      maxAge: 0,
-    }).json({
-      message: "Logged out successfully",
-      success: true,
-    })
-
+    return res
+      .cookie("access_token", "", {
+        maxAge: 0,
+      })
+      .json({
+        message: "Logged out successfully",
+        success: true,
+      });
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({
       error: "Internal server error",
       success: false,
-    })
+    });
   }
-}
+};
 
-
-
-export {registerUser,logout, loginUser, getProfile, updateProfilePic, deleteProfilePic};
+export {
+  registerUser,
+  logout,
+  loginUser,
+  getProfile,
+  updateProfilePic,
+  deleteProfilePic,
+  checkToken,
+};

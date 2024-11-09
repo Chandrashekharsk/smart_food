@@ -24,6 +24,9 @@ const Home = () => {
   const {
     searchResults,
     fetchRecipes,
+    searchPagination,
+    searchPaginationTotal,
+    setSearchPagination,
 
     page,
     setPage,
@@ -43,6 +46,8 @@ const Home = () => {
     likePost,
     dislikePost,
     deletePost,
+    setHidePagination,
+    hidePagination,
   } = useContext(GlobalContext);
 
   const [activePopup, setActivePopup] = useState(null);
@@ -123,6 +128,12 @@ const Home = () => {
     // if (!user) fetchRecipes();
     // else fetchRequired();
   };
+  const handleSearchChange = (event, value) => {
+    event.preventDefault();
+    setSearchPagination(value);
+    // if (!user) fetchRecipes();
+    // else fetchRequired();
+  };
 
 
   return (
@@ -148,14 +159,14 @@ const Home = () => {
                           alt={item.owner?.username}
                           src={item.owner?.profile_pic}
                         />) :
-                        <Avatar className="outline m-2"
+                        (<Avatar className="outline m-2"
                           sx={{ width: 35, height: 35 }}
-                          alt={item.owner?.username ? item.owner?.username.charAt(0).toUpperCase() : ""} 
+                          alt={item.owner?.username ? item.owner?.username.charAt(0).toUpperCase() : ""}
                           src={item.profile_pic} >
                           <span className="  text-gray-600">
                             {item.owner?.username ? item.owner?.username.charAt(0).toUpperCase() : ""}
                           </span>
-                        </Avatar>
+                        </Avatar>)
                       }
                       <div className="ml-3">
                         <span className="block text-gray-700 font-medium">
@@ -196,13 +207,13 @@ const Home = () => {
                           </>)
                       )}
                       {/* Ellipsis Button */}
-                      {user?.id === item.owner._id && 
-                      <button
-                        onClick={() => togglePopup(item._id)}
-                        className="text-gray-500 hover:text-gray-700"
-                      >
-                        <FaEllipsisH />
-                      </button>}
+                      {user?.id === item.owner._id &&
+                        <button
+                          onClick={() => togglePopup(item._id)}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          <FaEllipsisH />
+                        </button>}
                     </div>
                   </div>
 
@@ -271,20 +282,25 @@ const Home = () => {
             </div>
           ))
         ) : (
-          
+
           loading ?
             <TbLoader3 className=" loader  animate-spin h-16 w-16 text-violet-600" /> :
             <h2>No results found!</h2>
         )}
       </div>
-      {!loading && recipesList?.length > 0 &&
-        <div className=" py-8 px-14">
-          <Stack spacing={2}>
-            {/* <Typography>Page: {page}</Typography> */}
-            <Pagination className="text-bold" count={totalPages} page={page} onChange={handleChange} />
-          </Stack>
-        </div>
+      {!loading &&
+        recipesList?.length > 0 && 
+          !searchResults && (
+            <div className="py-8 px-14">
+              <Stack spacing={2}>
+                {/* <Typography>Page: {page}</Typography> */}
+                <Pagination className="text-bold" count={totalPages} page={page} onChange={handleChange} />
+              </Stack>
+            </div>
+          
+        )
       }
+
     </div>
   );
 };

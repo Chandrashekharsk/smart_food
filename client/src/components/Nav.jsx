@@ -82,6 +82,10 @@ export default function Nav() {
     setSearchResults(null);
     fetchRecipes(page);
   }
+  const handleClose= ()=>{
+    setShowPopup(false);
+    setPicPreview(null);
+  }
 
   return (
     <nav className="flex flex-col lg:flex-row lg:justify-between items-center p-4 lg:px-8 shadow-lg bg-gray-100 gap-4 lg:gap-0 w-full">
@@ -126,13 +130,23 @@ export default function Nav() {
               </NavLink>
             </li>
             <li className="relative">
-              <button onClick={() => setShowDropdown((prev) => !prev)} className="flex items-center focus:outline-none">
+              <button onClick={() => setShowDropdown((prev)=>(!prev))} className="flex items-center focus:outline-none">
                 <Stack direction="row" spacing={2}>
+                  {user?.profile_pic?
                   <Avatar
                     className="outline outline-blue-500"
                     alt={user.username ? user.username.charAt(0).toUpperCase() : ""}
                     src={user.profile_pic}
-                  />
+                  />:
+                  (<Avatar className="outlin outline-blue-500 m-2"
+                    // sx={{ width: 35, height: 35 }}
+                    alt={user.username ? user.username.charAt(0).toUpperCase() : ""} 
+                    src={user.profile_pic} >
+                    <span className="  text-gray-600">
+                      {user?.username ? user.username.charAt(0).toUpperCase() : ""}
+                    </span>
+                  </Avatar>)
+                }
                 </Stack>
               </button>
               {showDropdown && (
@@ -160,29 +174,29 @@ export default function Nav() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-80 max-w-full">
             <div className="flex justify-end">
-              <button onClick={() => setShowPopup(false)} className="text-gray-700 p-1 rounded-full">X</button>
+              <button onClick={handleClose} className="text-gray-700 p-1 rounded-full">X</button>
             </div>
             <h3 className="text-lg font-semibold mb-4 text-center">Edit Profile Picture</h3>
-            <div className="flex justify-center mb-4">
+            {!picPreview && <div className="flex justify-center mb-4">
               {user.profile_pic ? (
                 <Avatar alt={user.username} src={user.profile_pic} sx={{ width: 100, height: 100 }} />
               ) : (
                 <Avatar sx={{ width: 100, height: 100 }} />
               )}
-            </div>
+            </div>}
             <div className="flex flex-col gap-3 items-center">
-              <button onClick={handleDeletePicture} className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
+              {user.profile_pic && !picPreview? <button onClick={handleDeletePicture} className="w-40 px-2 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
                 {deleting ? "Please wait..." : "Delete Picture"}
-              </button>
+              </button>:""}
               {picPreview && <Avatar sx={{ width: 100, height: 100 }} alt="preview" src={picPreview} />}
               <input
                 ref={picInputRef}
                 type="file"
                 accept="image/*"
                 onChange={handleUploadNewPicture}
-                className="text-sm text-gray-600 file:py-2 file:px-4 file:rounded-lg file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                className="text-sm text-gray-600 file:py-2 file:px-4 file:rounded-lg file:bg-blue-50 file:text-blue-700 hover:cursor-pointer hover:file:bg-blue-100"
               />
-              {picPreview && <button onClick={handleEditProfilePicture} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+              {picPreview && <button onClick={handleEditProfilePicture} className="w-40 px-2 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
                 {loading ? "Uploading..." : "Upload"}
               </button>}
             </div>
