@@ -17,6 +17,7 @@ import { FiEdit } from "react-icons/fi";
 import { Heart } from "lucide-react";
 import Pagination from '@mui/material/Pagination';
 import Stack from '@mui/material/Stack';
+import { useDispatch, useSelector } from "react-redux";
 
 
 const Home = () => {
@@ -32,9 +33,7 @@ const Home = () => {
     setPage,
     totalPages,
     fetchRequired,
-    user,
     setIsAuthenticated,
-    setUser,
     getfavouriteRecipes,
     favoriteRecipes,
     getAllLikedPosts,
@@ -49,40 +48,34 @@ const Home = () => {
     setHidePagination,
     hidePagination,
   } = useContext(GlobalContext);
+  const {user} = useSelector((store)=>store.user);
+  const dispatch = useDispatch();
 
   const [activePopup, setActivePopup] = useState(null);
 
 
-  const init = async () => {
-    const token = await Cookies.get('access_token');
-    if (token) {
-      setIsAuthenticated(true);
-      const userDATA = await JSON.parse(sessionStorage.getItem('userDATA'));
-      if (userDATA) {
-        setUser(userDATA);
-      }
-      await getAllLikedPosts();
-      await getfavouriteRecipes();
-    } else {
-      setIsAuthenticated(false);
-    }
-    console.log("user: ", user);
-  }
+  // const init = async () => {
+  //   const token = await Cookies.get('access_token');
+  //   if (token) {
+  //     setIsAuthenticated(true);
+  //     const userDATA = await JSON.parse(sessionStorage.getItem('userDATA'));
+  //     if (userDATA) {
+  //       setUser(userDATA);
+  //     }
+  //     await getAllLikedPosts();
+  //     await getfavouriteRecipes();
+  //   } else {
+  //     setIsAuthenticated(false);
+  //   }
+  //   console.log("user: ", user);
+  // }
 
 
   useEffect(() => {
     if (searchResults) {
       setRecipesList(searchResults);
     }
-    if (!user) {
-      fetchRecipes(page);
-    }
-    if (user) {
-      init();
-      fetchRequired();
-    }
-
-  }, [user, page]);
+  }, [page]);
 
   const togglePopup = (id) => {
     setActivePopup((prev) => (prev === id ? null : id));

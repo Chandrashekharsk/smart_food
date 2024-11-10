@@ -14,12 +14,12 @@ import { TbLoader3, TbLoader } from "react-icons/tb";
 import { MdDelete } from "react-icons/md";
 import { FiEdit } from "react-icons/fi";
 import { Heart } from "lucide-react";
+import { useSelector } from "react-redux";
 
 
 
 const LikedRecipesList = () => {
   const {
-    user,
     favoriteRecipes,
     searchResults,
     setRecipesList,
@@ -33,6 +33,7 @@ const LikedRecipesList = () => {
     dislikePost,
     deletePost,
   } = useContext(GlobalContext);
+  const {user} = useSelector((store)=>store.user);
 
   const [activePopup, setActivePopup] = useState(null);
   const [likedItem, setLikedItem] = useState(null);
@@ -43,9 +44,9 @@ const LikedRecipesList = () => {
       try {
         setLoading(true);
         await fetchRequired();
-        if (searchResults) {
-          setRecipesList(searchResults);
-        }
+        // if (searchResults) {
+        //   setRecipesList(searchResults);
+        // }
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error("Failed to load data");
@@ -54,7 +55,7 @@ const LikedRecipesList = () => {
       }
     };
     fetchData();
-    let filteredRecipes = recipesList.filter((item) => likedPosts.includes(item._id));
+    let filteredRecipes = recipesList.filter((item) => likedPosts?.includes(item._id));
     setLikedItem(filteredRecipes);
   }, []);
 

@@ -4,21 +4,25 @@ import { useCookies } from "react-cookie";
 import Cookies from 'js-cookie';
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { setCookie, deleteCookie } from "../utils/cookieFuncs";
+import { useDispatch, useSelector } from "react-redux";
+import { clearAuthUser, setAuthUser } from "../redux/slices/authUser";
+import { clearAuthToken, setAuthToken } from "../redux/slices/authToken";
+
 
 export const GlobalContext = createContext();
 
 export default function GlobalState({ children }) {
+  const dispatch = useDispatch();
+  const { user } = useSelector((store) => store.user);
+  // const [user,setUser] = useState(null);
+
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
   const [searchParam, setSearchParam] = useState("");
   const [recipeDetailsData, setRecipeDetailsData] = useState(null);
   const [cookies] = useCookies(["access_token"]);
-  const [favouriteRecipes, setFavoritesRecipes] = useState([]);
   const [recipesList, setRecipesList] = useState([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [favoriteRecipes, setFavoriteRecipes] = useState();
-  const [likedPosts, setLikedPosts] = useState([]);
+  const [favoriteRecipes, setFavoriteRecipes] = useState(null);
+  const [likedPosts, setLikedPosts] = useState(null);
   const [searchResults, setSearchResults] = useState(null);
   const [page, setPage] = useState(1); // Current page
   const [totalPages, setTotalPages] = useState(0);
@@ -31,6 +35,7 @@ export default function GlobalState({ children }) {
   const [hidePagination, setHidePagination] = useState(false);
   const API_URL = process.env.REACT_APP_API_URL;
   const limit = 6; // Items per page
+  const { token } = useSelector((store) => store.token);
 
 
   const createRecipe = async (newRecipeData) => {
@@ -40,9 +45,6 @@ export default function GlobalState({ children }) {
 
       if (res.data.success) {
         toast.success("Created");
-
-        // Invalidate cache for the current page
-        localStorage.removeItem(`curr_page_${page}`);
         fetchRecipes(page);
         navigate("/");
       }
@@ -148,9 +150,10 @@ export default function GlobalState({ children }) {
       const res = await axios.get(`${API_URL}/auth/logout`);
 
       if (res.data.success) {
-        // toast.success(res.data.message);
-        sessionStorage.removeItem('userDATA');
-        setUser(null);
+        dispatch(clearAuthUser());
+        dispatch(clearAuthToken());
+        setLikedPosts(null);
+        setFavoriteRecipes(null);
         navigate("/login");
       }
     } catch (err) {
@@ -192,7 +195,10 @@ export default function GlobalState({ children }) {
   const getfavouriteRecipes = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/recipes/favorites`, { withCredentials: true });
+      const res = await axios.get(`${API_URL}/recipes/favorites`,
+        {
+          withCredentials: true
+        });
 
       if (res.data.success) {
         setFavoriteRecipes(res.data?.savedRecipes);
@@ -208,7 +214,8 @@ export default function GlobalState({ children }) {
   const getAllLikedPosts = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/recipes/likedposts`, { withCredentials: true });
+      const res = await axios.get(`${API_URL}/recipes/likedposts`,
+        { withCredentials: true });
       setLikedPosts(res.data?.likedPosts);
     } catch (error) {
       console.error("Error fetching liked posts:", error);
@@ -291,20 +298,15 @@ export default function GlobalState({ children }) {
   }
 
   const init = async () => {
-    const token = await Cookies.get('access_token');
-    if (token) {
-      const userDATA = await JSON.parse(sessionStorage.getItem('userDATA'));
-      if (userDATA) {
-        setUser(userDATA);
-      }
-      await getAllLikedPosts();
-      await getfavouriteRecipes();
-      fetchRecipes();
-      setIsAuthenticated(true);
+    // const token = await Cookies.get('access_token');
+    if (user) {
+      console.log("init user found")
+      console.log("token", token);
+      await fetchRequired();
     } else {
-      setIsAuthenticated(false);
+      console.log("init user not found")
+      await fetchRecipes();
     }
-    navigate("/")
   }
 
   const deleteProfilePicture = async () => {
@@ -313,8 +315,8 @@ export default function GlobalState({ children }) {
       const res = await axios.delete(`${API_URL}/auth/delete-profilepic`, { withCredentials: true });
       if (res.data.success) {
         toast.success(res.data.message);
-        setUser({ ...user, "profile_pic": null })
-        sessionStorage.setItem('userDATA', JSON.stringify({ ...user, "profile_pic": null }));
+        dispatch(setAuthUser({ ...user, "profile_pic": null }));
+        // sessionStorage.setItem('userDATA', JSON.stringify({ ...user, "profile_pic": null }));
       } else {
         toast.error(res.data.message);
       }
@@ -345,8 +347,8 @@ export default function GlobalState({ children }) {
 
       if (res.data.success) {
         toast.success(res.data.message);
-        setUser({ ...user, "profile_pic": res.data.user.profile_pic })
-        sessionStorage.setItem('userDATA', JSON.stringify(res.data.user));
+        dispatch(setAuthUser({ ...user, "profile_pic": res.data.user.profile_pic }));
+        // sessionStorage.setItem('userDATA', JSON.stringify(res.data.user));
       } else {
         toast.error(res.data.message);
       }
@@ -376,12 +378,11 @@ export default function GlobalState({ children }) {
       if (res.data.success) {
         const checkToken = await axios.get(`${API_URL}/auth/checkauth`, { withCredentials: true });
         if (!checkToken.data.success) {
-          toast.error("Login failed!");
-          toast.info("Please enable cookies in your browser settings to continue");
+          toast.info("Cookies has blocked by browser");
         } else {
           toast.success(res.data.message);
-          setUser(res.data.user);
-          sessionStorage.setItem('userDATA', JSON.stringify(res.data.user));
+          dispatch(setAuthUser(res.data.user));
+          dispatch(setAuthToken(res.data.token));
           await fetchRequired();
         }
         navigate("/");
@@ -416,7 +417,27 @@ export default function GlobalState({ children }) {
   }
 
   useEffect(() => {
+    console.log("interceptor runned")
+    // Axios interceptor to add Authorization header with the token for each request
+    const interceptor = axios.interceptors.request.use(
+      (config) => {
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    // Clean up interceptor on component unmount
+    return () => {
+      axios.interceptors.request.eject(interceptor);
+    };
+  }, [token]); // Re-run if token changes
+
+  useEffect(() => {
     setLoading(true);
+    console.log("init runned")
     init();
     setLoading(false);
   }, []);  // Run only once on mount
@@ -450,8 +471,6 @@ export default function GlobalState({ children }) {
         setSearchPagination,
 
         setLoading,
-        user,
-        setUser,
         fetchRequired,
         onLogin,
         deleteProfilePicture,
@@ -471,10 +490,7 @@ export default function GlobalState({ children }) {
         searchParam,
         setSearchParam,
         setRecipeDetailsData,
-        favouriteRecipes,
         recipesList,
-        isAuthenticated,
-        setIsAuthenticated,
         favoriteRecipes,
         setFavoriteRecipes,
         likedPosts,

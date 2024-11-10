@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack';
 import { toast } from "react-toastify";
 import { FiPlus } from "react-icons/fi";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { useSelector } from "react-redux";
 
 export default function Nav() {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -16,8 +17,9 @@ export default function Nav() {
   const [picPreview, setPicPreview] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const location = useLocation();
+  const {user} = useSelector((store)=>store.user);
 
-  const { user, loading, setSearchResults, fetchRecipes, searching, logout, editProfilePicture, deleteProfilePicture, init, page, handleSearch } = useContext(GlobalContext);
+  const { loading, setSearchResults, fetchRecipes, searching, logout, editProfilePicture, deleteProfilePicture, init, page, handleSearch } = useContext(GlobalContext);
   const dropdownRef = useRef(null);
   const picInputRef = useRef(null);
 
@@ -57,7 +59,7 @@ export default function Nav() {
   };
 
   useEffect(() => {
-    init();
+    // init();
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);

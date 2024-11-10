@@ -184,6 +184,7 @@ const loginUser = async (req, res) => {
           username: existsUser.username,
           profile_pic: existsUser.profile_pic, // Use updated profile_pic
         },
+        token,
       });
   } catch (error) {
     console.error("Error:", error.message);

@@ -231,6 +231,7 @@ const saveRecipe = async (req, res) => {
 };
 
 const getSavedRecipe = async (req, res) => {
+  console.log(("backend get saved recipes start"));
   const {page, limit} = req.query;
   try {
     const userId = req.UserId;
@@ -256,7 +257,7 @@ const getSavedRecipe = async (req, res) => {
         success: false,
       });
     }
-
+    console.log(("backend get saved recipes done"));
     return res.status(200).json({
       savedRecipes: user.savedRecipes,
       message: "Recipes retrieved successfully",
@@ -355,6 +356,7 @@ const disLikePost = async(req, res) => {
 }
 
 const getLikedPosts = async(req, res)=>{
+  console.log(("backend get liked recipes start"));
   try {
     const userId = req.UserId;
     const user = await UserModel.findById(userId)
@@ -368,10 +370,11 @@ const getLikedPosts = async(req, res)=>{
         success:false,
       })
     }
+    console.log(("backend get liked recipes end"));
     return res.status(200).json({
       success: true,
       likedPosts: user.liked
-    })
+    }) 
 
   } catch (error) {
     console.log(error.message);

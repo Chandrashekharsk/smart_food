@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 export const verifyToken = async (req, res, next) => {
-  console.log("intoken validator")
+  console.log("in middleware")
   try {
     const token = req.cookies?.access_token
     || (req.headers.authorization && req.headers.authorization.split(" ")[1]);

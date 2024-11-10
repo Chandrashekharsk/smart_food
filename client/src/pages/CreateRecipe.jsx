@@ -1,10 +1,14 @@
 import React, { useState, useContext } from "react";
-import { useGetUserID } from "../hooks/useGetUserID";
+// import { useGetUserID } from "../hooks/useGetUserID";
 import { GlobalContext } from "../context";
 import { FiTrash, FiPlusCircle } from "react-icons/fi"; // Icons for add/delete
+import { useSelector } from "react-redux";
+
 
 export const CreateRecipe = () => {
-  const userID = useGetUserID();
+  const {user}= useSelector((store)=>store.user);
+  // const userID = useGetUserID();
+  const userID = user.id;
   const { createRecipe } = useContext(GlobalContext); // Access global favorites
   const [recipe, setRecipe] = useState({
     name: "",

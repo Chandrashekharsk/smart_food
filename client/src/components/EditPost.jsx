@@ -1,14 +1,15 @@
 import React, { useContext, useEffect } from "react";
 import { useParams } from "react-router-dom";
-
 import { GlobalContext } from "../context";
 import { FiTrash, FiPlusCircle } from "react-icons/fi";
 import { TbLoader3 } from "react-icons/tb";
 import { toast } from "react-toastify";
+import { useSelector } from "react-redux";
 
 export const EditPost = () => {
   const { id } = useParams();
-  const { getEditableRecipe, user,editPost, editableRecipe,setEditableRecipe, editableImagePreview, setEditableImagePreview } = useContext(GlobalContext);
+  const { getEditableRecipe,editPost, editableRecipe,setEditableRecipe, editableImagePreview, setEditableImagePreview } = useContext(GlobalContext);
+  const {user} = useSelector((store)=>store.user);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

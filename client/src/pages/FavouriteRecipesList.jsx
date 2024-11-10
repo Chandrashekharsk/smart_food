@@ -14,11 +14,11 @@ import { TbLoader3, TbLoader } from "react-icons/tb";
 import { MdDelete } from "react-icons/md";
 import { FiEdit } from "react-icons/fi";
 import { Heart } from "lucide-react";
+import { useSelector } from "react-redux";
 
 
 const FavouriteRecipesList = () => {
   const {
-    user,
     favoriteRecipes,
     recipesList,
     addToFavorites,
@@ -35,6 +35,7 @@ const FavouriteRecipesList = () => {
 
   const [activePopup, setActivePopup] = useState(null);
   const [favoriteItem, setFavoriteItem] = useState();
+  const {user} = useSelector((store)=>store.user);
 
 
   useEffect(() => {
@@ -43,9 +44,9 @@ const FavouriteRecipesList = () => {
       try {
         setLoading(true);
         await fetchRequired();
-        if (searchResults) {
-          setRecipesList(searchResults);
-        }
+        // if (searchResults) {
+        //   setRecipesList(searchResults);
+        // }
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error("Failed to load data");
