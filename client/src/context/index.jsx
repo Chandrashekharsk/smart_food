@@ -379,12 +379,11 @@ export default function GlobalState({ children }) {
         const checkToken = await axios.get(`${API_URL}/auth/checkauth`, { withCredentials: true });
         if (!checkToken.data.success) {
           toast.info("Cookies has blocked by browser");
-        } else {
-          toast.success(res.data.message);
-          dispatch(setAuthUser(res.data.user));
           dispatch(setAuthToken(res.data.token));
-          await fetchRequired();
         }
+        toast.success(res.data.message);
+        dispatch(setAuthUser(res.data.user));
+        await fetchRequired();
         navigate("/");
       }
     } catch (err) {
