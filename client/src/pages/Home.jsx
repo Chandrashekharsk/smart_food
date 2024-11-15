@@ -54,24 +54,25 @@ const Home = () => {
   const [activePopup, setActivePopup] = useState(null);
 
 
-  // const init = async () => {
-  //   const token = await Cookies.get('access_token');
-  //   if (token) {
-  //     setIsAuthenticated(true);
-  //     const userDATA = await JSON.parse(sessionStorage.getItem('userDATA'));
-  //     if (userDATA) {
-  //       setUser(userDATA);
-  //     }
-  //     await getAllLikedPosts();
-  //     await getfavouriteRecipes();
-  //   } else {
-  //     setIsAuthenticated(false);
-  //   }
-  //   console.log("user: ", user);
-  // }
+  const init = async () => {
+    const token = await Cookies.get('access_token');
+    if (token) {
+      setIsAuthenticated(true);
+      const userDATA = await JSON.parse(sessionStorage.getItem('userDATA'));
+      if (userDATA) {
+        setUser(userDATA);
+      }
+      await getAllLikedPosts();
+      await getfavouriteRecipes();
+    } else {
+      setIsAuthenticated(false);
+    }
+    console.log("user: ", user);
+  }
 
 
   useEffect(() => {
+    init();
     if (searchResults) {
       setRecipesList(searchResults);
     }
