@@ -17,6 +17,7 @@ export default function GlobalState({ children }) {
   // const [user,setUser] = useState(null);
 
   const [loading, setLoading] = useState(false);
+  const [searhCalled, setSearhCalled] = useState(false);
   const [searchParam, setSearchParam] = useState("");
   const [recipeDetailsData, setRecipeDetailsData] = useState(null);
   const [cookies] = useCookies(["access_token"]);
@@ -275,6 +276,7 @@ export default function GlobalState({ children }) {
       toast.error(error.response.data.message);
     } finally {
       setLoading(false);
+      setSearhCalled(true);
       setSearching(false);
     }
   }
@@ -305,7 +307,7 @@ export default function GlobalState({ children }) {
       await fetchRequired();
     } else {
       console.log("init user not found")
-      await fetchRecipes();
+      await fetchRecipes(page);
     }
   }
 
@@ -485,6 +487,8 @@ export default function GlobalState({ children }) {
         setTotalPages,
         limit,
         init,
+        setSearhCalled,
+        searhCalled,
 
         searchParam,
         setSearchParam,

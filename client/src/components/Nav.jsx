@@ -19,7 +19,7 @@ export default function Nav() {
   const location = useLocation();
   const {user} = useSelector((store)=>store.user);
 
-  const { loading, setSearchResults, fetchRecipes, searching, logout, editProfilePicture, deleteProfilePicture, init, page, handleSearch } = useContext(GlobalContext);
+  const { loading, setSearchResults, fetchRecipes,setSearhCalled, searching, logout, editProfilePicture, deleteProfilePicture, init, page, handleSearch } = useContext(GlobalContext);
   const dropdownRef = useRef(null);
   const picInputRef = useRef(null);
 
@@ -81,6 +81,8 @@ export default function Nav() {
   };
 
   const handleclick = async () => {
+    setSearchQuery("");
+    setSearhCalled(false);
     setSearchResults(null);
     fetchRecipes(page);
   }

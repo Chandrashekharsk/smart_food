@@ -14,8 +14,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { TbLoader3, TbLoader } from "react-icons/tb";
 import { MdDelete } from "react-icons/md";
 import { FiEdit } from "react-icons/fi";
-import { Heart } from "lucide-react";
+import { ConstructionIcon, Heart } from "lucide-react";
 import Pagination from '@mui/material/Pagination';
+import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import { useDispatch, useSelector } from "react-redux";
 
@@ -40,6 +41,7 @@ const Home = () => {
     recipesList,
     setRecipesList,
     addToFavorites,
+    init,
     loading,
     likedPosts,
     likePost,
@@ -47,36 +49,43 @@ const Home = () => {
     deletePost,
     setHidePagination,
     hidePagination,
+    setSearhCalled,
+    searhCalled,
   } = useContext(GlobalContext);
-  const {user} = useSelector((store)=>store.user);
+  const { user } = useSelector((store) => store.user);
   const dispatch = useDispatch();
 
   const [activePopup, setActivePopup] = useState(null);
 
 
-  const init = async () => {
-    const token = await Cookies.get('access_token');
-    if (token) {
-      setIsAuthenticated(true);
-      const userDATA = await JSON.parse(sessionStorage.getItem('userDATA'));
-      if (userDATA) {
-        setUser(userDATA);
-      }
-      await getAllLikedPosts();
-      await getfavouriteRecipes();
-    } else {
-      setIsAuthenticated(false);
-    }
-    console.log("user: ", user);
-  }
+  // const init = async () => {
+  //   const token = await Cookies.get('access_token');
+  //   if (token) {
+  //     setIsAuthenticated(true);
+  //     const userDATA = await JSON.parse(sessionStorage.getItem('userDATA'));
+  //     if (userDATA) {
+  //       setUser(userDATA);
+  //     }
+  //     await getAllLikedPosts();
+  //     await getfavouriteRecipes();
+  //   } else {
+  //     setIsAuthenticated(false);
+  //   }
+  //   console.log("user: ", user);
+  // }
 
 
   useEffect(() => {
-    init();
+    // fetchRecipes(page);
     if (searchResults) {
+      setSearhCalled(true)
       setRecipesList(searchResults);
+    }else{
+      fetchRecipes(page);
+      setSearhCalled(false);
     }
-  }, [page]);
+    // console.log("setSearchCalled ", setSearhCalled)
+  }, [page, setRecipesList]);
 
   const togglePopup = (id) => {
     setActivePopup((prev) => (prev === id ? null : id));
@@ -119,7 +128,7 @@ const Home = () => {
   const handleChange = (event, value) => {
     event.preventDefault();
     setPage(value);
-    // if (!user) fetchRecipes();
+    // if (!user) fetchRecipes(page);
     // else fetchRequired();
   };
   const handleSearchChange = (event, value) => {
@@ -277,24 +286,24 @@ const Home = () => {
           ))
         ) : (
 
+          // <TbLoader3 className=" loader  animate-spin h-16 w-16 text-violet-600" />
           loading ?
             <TbLoader3 className=" loader  animate-spin h-16 w-16 text-violet-600" /> :
             <h2>No results found!</h2>
         )}
       </div>
       {!loading &&
-        recipesList?.length > 0 && 
-          !searchResults && (
-            <div className="py-8 px-14">
-              <Stack spacing={2}>
-                {/* <Typography>Page: {page}</Typography> */}
-                <Pagination className="text-bold" count={totalPages} page={page} onChange={handleChange} />
-              </Stack>
-            </div>
-          
-        )
-      }
+        recipesList?.length > 0 &&
+        !searhCalled ? (
+          <div className="py-8 px-14">
+            <Stack spacing={2}>
+              {/* <Typography>Page: {page}</Typography> */}
+              <Pagination className="text-bold" count={totalPages} page={page} onChange={handleChange} />
+            </Stack>
+          </div>
 
+        ): ""
+      }
     </div>
   );
 };
